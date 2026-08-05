@@ -27,7 +27,7 @@ without pulling in a third-party router.
   from method mappings. A request to a known path with an unrecognised method
   receives a `405 Method Not Allowed` with a populated `Allow` header; a truly
   unknown path gets `404 Not Found`.
-- **Param binding** — `Bind` automatically unmarshals JSON, XML, YAML, and form
+- **Param binding** — `Bind` automatically unmarshals JSON, XML, and form
   data into Go structs (similar to Gin's `ShouldBind`), while `PathParam` /
   `QueryParam` helpers provide easy access to URL parameters.
 - **Response rendering** — convenience functions for JSON, XML, plain text, and
@@ -67,6 +67,33 @@ func main() {
 
     http.ListenAndServe(":8080", root.Handler())
 }
+```
+
+### Sub-groups
+
+```go
+root := ferret.NewRootGroup(sm, middleware.Logger())
+api  := root.Group("/api", middleware.Timeout(5*time.Second))
+v1   := api.Group("/v1")
+
+v1.Get("/users", func(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("[user1, user2]"))
+})
+// Registered as: GET /api/v1/users
+```
+
+### Generic Logic handlers
+
+```go
+type CreateReq struct {
+    Name  string `json:"name"`
+    Email string `json:"email"`
+}
+
+ferret.PostLogic(v1, "/users", func(ctx context.Context, req CreateReq) (any, error) {
+    // req is auto-decoded from JSON body, response auto-encoded
+    return map[string]string{"id": "42", "name": req.Name}, nil
+})
 ```
 
 ## Core Concepts
@@ -145,8 +172,8 @@ and can be combined freely with `ferret.Chain`.
 | Function | Description |
 | -------- | ----------- |
 | `HandleT(logicFn)` | Wraps a `LogicFunc[T]` into a standard `http.HandlerFunc`. |
-| `Bind(r, &v)` | Auto-binds the request body to a struct based on `Content-Type` (JSON, XML, YAML, form). |
-| `DecodeJSON / DecodeXML / DecodeYAML / DecodeForm` | Decode the request body for a specific media type. |
+| `Bind(r, &v)` | Auto-binds the request body to a struct based on `Content-Type` (JSON, XML, form). |
+| `DecodeJSON / DecodeXML / DecodeForm` | Decode the request body for JSON, XML, or form data. |
 | `WriteJSON / WriteXML / WriteText / WriteNoContent` | Write common response formats. |
 | `WriteStream(w, code, contentType, reader)` | Stream arbitrary data to the response (useful for file downloads or SSE). |
 | `PathParam(r, name)` / `QueryParam(r, name)` | Read path wildcards and query parameters with typed variants (`Int`, `Float`, `Bool`, `Int64`). |
@@ -165,10 +192,18 @@ and can be combined freely with `ferret.Chain`.
 | Example | Command |
 | ------- | ------- |
 | Hello World | `go run _examples/hello-world/main.go` |
+| Sub-groups & middleware | `go run _examples/sub-group/main.go` |
+| Middleware combo | `go run _examples/middleware/main.go` |
 | REST API with Logic handlers | `go run _examples/rest-api/main.go` |
 
 The **hello-world** example shows minimal usage: a root group with two GET
 routes and standard `http.HandlerFunc` handlers.
+
+The **sub-group** example shows sub-group nesting with inherited
+middleware (Logger → Timeout → RequestID).
+
+The **middleware** example combines all built-in middleware into a single
+production-ready service.
 
 The **rest-api** example demonstrates middleware (`Logger`, `RequestID`,
 `ContentType`), sub-groups (`/api/v1`), and generic `LogicFunc` handlers that

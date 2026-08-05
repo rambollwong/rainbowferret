@@ -21,7 +21,7 @@ RainbowFerret 是一个轻量级的 Go HTTP 框架，直接构建在 Go 1.22+ �
 - **404 与 405 区分** — 框架分别记录已注册的路径和方法映射。对已知路径使用未注册
   方法发起的请求返回 `405 Method Not Allowed`（含 `Allow` 头）；真正未知的路径
   返回 `404 Not Found`。
-- **参数绑定** — `Bind` 根据 `Content-Type` 自动将 JSON、XML、YAML 和表单数据
+- **参数绑定** — `Bind` 根据 `Content-Type` 自动将 JSON、XML 和表单数据
   反序列化为 Go 结构体（类似 Gin 的 `ShouldBind`）；`PathParam` / `QueryParam`
   系列辅助函数便捷读取 URL 参数。
 - **响应渲染** — 提供 JSON、XML、纯文本以及流式输出的便捷函数。
@@ -60,6 +60,33 @@ func main() {
 
     http.ListenAndServe(":8080", root.Handler())
 }
+```
+
+### 子分组
+
+```go
+root := ferret.NewRootGroup(sm, middleware.Logger())
+api  := root.Group("/api", middleware.Timeout(5*time.Second))
+v1   := api.Group("/v1")
+
+v1.Get("/users", func(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("[user1, user2]"))
+})
+// 注册路径为: GET /api/v1/users
+```
+
+### 泛型逻辑处理器
+
+```go
+type CreateReq struct {
+    Name  string `json:"name"`
+    Email string `json:"email"`
+}
+
+ferret.PostLogic(v1, "/users", func(ctx context.Context, req CreateReq) (any, error) {
+    // 请求体自动解码为 CreateReq，响应自动 JSON 编码
+    return map[string]string{"id": "42", "name": req.Name}, nil
+})
 ```
 
 ## 核心概念
@@ -132,8 +159,8 @@ type LogicFunc[T any] func(ctx context.Context, req T) (res any, err error)
 | 函数 | 说明 |
 | ---- | ---- |
 | `HandleT(logicFn)` | 将 `LogicFunc[T]` 包装为标准 `http.HandlerFunc`。 |
-| `Bind(r, &v)` | 根据 `Content-Type` 自动将请求体绑定到结构体（JSON、XML、YAML、表单）。 |
-| `DecodeJSON / DecodeXML / DecodeYAML / DecodeForm` | 为特定媒体类型解码请求体。 |
+| `Bind(r, &v)` | 根据 `Content-Type` 自动将请求体绑定到结构体（JSON、XML、表单）。 |
+| `DecodeJSON / DecodeXML / DecodeForm` | 为 JSON、XML 或表单数据解码请求体。 |
 | `WriteJSON / WriteXML / WriteText / WriteNoContent` | 写入常见格式的响应。 |
 | `WriteStream(w, code, contentType, reader)` | 流式输出响应（适用于文件下载或 SSE）。 |
 | `PathParam(r, name)` / `QueryParam(r, name)` | 读取路径通配符和查询参数，提供 `Int`、`Float`、`Bool`、`Int64` 等类型变体。 |
@@ -152,10 +179,16 @@ type LogicFunc[T any] func(ctx context.Context, req T) (res any, err error)
 | 示例 | 运行命令 |
 | ---- | -------- |
 | Hello World | `go run _examples/hello-world/main.go` |
+| 子分组与中间件 | `go run _examples/sub-group/main.go` |
+| 中间件组合 | `go run _examples/middleware/main.go` |
 | REST API（使用 Logic 处理器） | `go run _examples/rest-api/main.go` |
 
 **hello-world** 示例展示了最简用法：一个根分组配两条 GET 路由，使用标准
 `http.HandlerFunc` 处理器。
+
+**sub-group** 示例展示了子分组嵌套和中间件继承（Logger → Timeout → RequestID）。
+
+**middleware** 示例将所有内置中间件组合为一个生产就绪的服务。
 
 **rest-api** 示例展示了中间件（`Logger`、`RequestID`、`ContentType`）、
 子分组（`/api/v1`）以及泛型 `LogicFunc` 处理器 — 请求体自动解码为 JSON，
