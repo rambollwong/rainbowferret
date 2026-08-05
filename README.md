@@ -98,6 +98,19 @@ ferret.PostLogic(v1, "/users", func(ctx context.Context, req CreateReq) (any, er
 })
 ```
 
+### Static files
+
+```go
+// Local directory
+root.Static("/assets", "./public")
+
+// Embed with //go:embed
+//go:embed dist
+var distFS embed.FS
+sub, _ := fs.Sub(distFS, "dist")
+root.StaticFS("/", sub)
+```
+
 ## Core Concepts
 
 ### Router interface
@@ -194,6 +207,7 @@ and can be combined freely with `ferret.Chain`.
 | Example | Command |
 | ------- | ------- |
 | Hello World | `go run _examples/hello-world/main.go` |
+| Static files | `go run _examples/static-files/main.go` |
 | Sub-groups & middleware | `go run _examples/sub-group/main.go` |
 | Middleware combo | `go run _examples/middleware/main.go` |
 | REST API with Logic handlers | `go run _examples/rest-api/main.go` |

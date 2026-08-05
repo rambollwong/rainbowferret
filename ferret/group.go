@@ -2,7 +2,9 @@ package ferret
 
 import (
 	"fmt"
+	"io/fs"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -287,6 +289,32 @@ func (g *Group) writeMethodNotAllowed(w http.ResponseWriter, pattern string) {
 	sort.Strings(allowed)
 	w.Header().Set("Allow", strings.Join(allowed, ", "))
 	w.WriteHeader(http.StatusMethodNotAllowed)
+}
+
+// Static serves static files from a local directory. The pattern is
+// automatically suffixed with "/" for subtree matching. The handler is
+// registered as a GET route so it participates in middleware chaining
+// and 405 detection.
+//
+// Static 从本地目录提供静态文件服务。pattern 自动添加 "/" 后缀以匹配子树。
+// handler 注册为 GET 路由，参与中间件链和 405 检测。
+func (g *Group) Static(pattern, dir string) {
+	g.StaticFS(pattern, os.DirFS(dir))
+}
+
+// StaticFS serves static files from an fs.FS (e.g. embed.FS, os.DirFS).
+// The handler is registered as a GET route so it participates in middleware
+// chaining and 405 detection.
+//
+// StaticFS 从 fs.FS（如 embed.FS、os.DirFS）提供静态文件服务。
+// handler 注册为 GET 路由，参与中间件链和 405 检测。
+func (g *Group) StaticFS(pattern string, fsys fs.FS) {
+	if !strings.HasSuffix(pattern, "/") {
+		pattern += "/"
+	}
+	fullPath := g.prefix + pattern
+	handler := http.StripPrefix(fullPath, http.FileServerFS(fsys))
+	g.handle(http.MethodGet, pattern, handler.ServeHTTP)
 }
 
 // GetLogic registers a GET handler backed by a generic LogicFunc.

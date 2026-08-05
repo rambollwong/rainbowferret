@@ -91,6 +91,19 @@ ferret.PostLogic(v1, "/users", func(ctx context.Context, req CreateReq) (any, er
 })
 ```
 
+### 静态文件
+
+```go
+// 本地目录
+root.Static("/assets", "./public")
+
+// embed 嵌入 (//go:embed)
+//go:embed dist
+var distFS embed.FS
+sub, _ := fs.Sub(distFS, "dist")
+root.StaticFS("/", sub)
+```
+
 ## 核心概念
 
 ### Router 接口
@@ -181,6 +194,7 @@ type LogicFunc[T any] func(ctx context.Context, req T) (res any, err error)
 | 示例 | 运行命令 |
 | ---- | -------- |
 | Hello World | `go run _examples/hello-world/main.go` |
+| 静态文件 | `go run _examples/static-files/main.go` |
 | 子分组与中间件 | `go run _examples/sub-group/main.go` |
 | 中间件组合 | `go run _examples/middleware/main.go` |
 | REST API（使用 Logic 处理器） | `go run _examples/rest-api/main.go` |
