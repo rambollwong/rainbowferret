@@ -8,6 +8,8 @@ RainbowFerret 是一个轻量级的 Go HTTP 框架，直接构建在 Go 1.22+ �
 [![Go Version](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
+[[English](README.md)]
+
 ## 特性
 
 - **零路由依赖** — 基于标准库 `net/http.ServeMux`，直接使用原生的方法前缀模式

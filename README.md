@@ -9,6 +9,8 @@ without pulling in a third-party router.
 [![Go Version](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
+[[中文文档](README_zh_cn.md)]
+
 ## Features
 
 - **Zero router dependency** — sits on top of `net/http.ServeMux` and uses its
