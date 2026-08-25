@@ -3,7 +3,7 @@
 A lightweight, idiomatic HTTP framework for Go, built directly on the enhanced
 [`net/http.ServeMux`](https://pkg.go.dev/net/http#ServeMux) introduced in Go 1.22+.
 It brings middleware chaining, sub-group nesting, automatic 404/405 distinction,
-generic logic handlers, and a set of production-ready built-in middleware — all
+generic handlers, and a set of production-ready built-in middleware — all
 without pulling in a third-party router.
 
 [![Go Version](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go)](https://go.dev/)
@@ -16,7 +16,7 @@ without pulling in a third-party router.
 - **Zero router dependency** — sits on top of `net/http.ServeMux` and uses its
   native method-prefixed patterns (`GET /path`, `POST /path`) and path wildcards
   (`{id}`).
-- **Generic Logic handlers** — `LogicFunc[T]` functions receive a typed request
+- **Generic handlers** — `HandlerFunc[T, R]` functions receive a typed request
   struct, return a typed response and an error; the framework handles JSON
   decoding/encoding automatically.
 - **Middleware chain** — `Middleware` is the familiar `func(http.Handler)
@@ -84,7 +84,7 @@ v1.Get("/users", func(w http.ResponseWriter, r *http.Request) {
 // Registered as: GET /api/v1/users
 ```
 
-### Generic Logic handlers
+### Generic handlers
 
 ```go
 type CreateReq struct {
@@ -92,7 +92,7 @@ type CreateReq struct {
     Email string `json:"email"`
 }
 
-ferret.PostLogic(v1, "/users", func(ctx context.Context, req CreateReq) (any, error) {
+ferret.PostHandler(v1, "/users", func(ctx context.Context, req CreateReq) (map[string]string, error) {
     // req is auto-decoded from JSON body, response auto-encoded
     return map[string]string{"id": "42", "name": req.Name}, nil
 })
@@ -150,18 +150,33 @@ levels:
 3. **Per-route** — the final argument to `Get`/`Post`/etc., runs after group
    middleware.
 
-### Logic handlers (generic)
+### Generic handlers
+
+The generic handler types use separate request (T) and response (R) type
+parameters and work on every Go version (1.18+):
 
 ```go
-type LogicFunc[T any] func(ctx context.Context, req T) (res any, err error)
+type Handler[T, R any] interface {
+    Handle(ctx context.Context, req T) (res R, err error)
+}
+type HandlerFunc[T, R any] func(ctx context.Context, req T) (res R, err error)
 ```
 
-`LogicFunc[T]` encapsulates a three-step flow: **decode → execute → encode**.
-The framework decodes the request body into type `T`, calls your function, and
-writes the result as JSON. Returning `nil, nil` produces `204 No Content`.
+They encapsulate a three-step flow: **decode → handle → encode**. The framework
+decodes the request body into `T`, calls your handler, and writes the result as
+JSON. A nil result produces `204 No Content` (detected via `util.IsNil`).
 
-Helper registration functions — `ferret.GetLogic`, `ferret.PostLogic`,
-`ferret.DeleteLogic`, etc. — wire a `LogicFunc[T]` directly onto a group.
+Registration has two forms:
+
+```go
+// Package-level function — works on every Go version (1.18+).
+ferret.GetHandler(api, "/users/{id}", getUser)     // func(ctx, struct{}) (UserResp, error)
+ferret.PostHandler(api, "/users", createUser)
+
+// Method-style on *Group — Go 1.27+ only (uses generic methods).
+api.GetHandler("/users/{id}", GetUserHandler{})    // implements types.Handler[T, R]
+api.PostHandler("/users", CreateUserHandler{})
+```
 
 ## Built-in Middleware
 
@@ -186,7 +201,8 @@ and can be combined freely with `ferret.Chain`.
 
 | Function | Description |
 | -------- | ----------- |
-| `HandleT(logicFn)` | Wraps a `LogicFunc[T]` into a standard `http.HandlerFunc`. |
+| `HandleT(handlerFn)` | Wraps a `HandlerFunc[T, R]` into a standard `http.HandlerFunc`. |
+| `IsNil(v)` | Reports whether `v` is nil, including typed nils (pointer, slice, map, chan, func, interface). |
 | `Bind(r, &v)` | Auto-binds the request body to a struct based on `Content-Type` (JSON, XML, form). |
 | `DecodeJSON / DecodeXML / DecodeForm` | Decode the request body for JSON, XML, or form data. |
 | `WriteJSON / WriteXML / WriteText / WriteNoContent` | Write common response formats. |
@@ -199,7 +215,7 @@ and can be combined freely with `ferret.Chain`.
 | Type | Description |
 | ---- | ----------- |
 | `HTTPError` | A standard error carrying an HTTP status code. |
-| `Logic[T]` / `LogicFunc[T]` | The generic handler interface and function type. |
+| `Handler[T, R]` / `HandlerFunc[T, R]` | The generic handler interface and function type with separate request/response types. |
 | `BadRequest / NotFound / Internal / …` | Factory functions for common `HTTPError` status codes. |
 
 ## Examples
@@ -210,7 +226,7 @@ and can be combined freely with `ferret.Chain`.
 | Static files | `go run _examples/static-files/main.go` |
 | Sub-groups & middleware | `go run _examples/sub-group/main.go` |
 | Middleware combo | `go run _examples/middleware/main.go` |
-| REST API with Logic handlers | `go run _examples/rest-api/main.go` |
+| REST API with generic handlers | `go run _examples/rest-api/main.go` |
 
 The **hello-world** example shows minimal usage: a root group with two GET
 routes and standard `http.HandlerFunc` handlers.
@@ -222,7 +238,7 @@ The **middleware** example combines all built-in middleware into a single
 production-ready service.
 
 The **rest-api** example demonstrates middleware (`Logger`, `RequestID`,
-`ContentType`), sub-groups (`/api/v1`), and generic `LogicFunc` handlers that
+`ContentType`), sub-groups (`/api/v1`), and generic `HandlerFunc` handlers that
 automatically decode JSON requests and encode JSON responses.
 
 ## License

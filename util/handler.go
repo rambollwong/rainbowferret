@@ -6,15 +6,15 @@ import (
 	"github.com/rambollwong/rainbowferret/types"
 )
 
-// HandleT wraps a generic LogicFunc into a standard http.HandlerFunc.
-// It automatically decodes the request body into T, invokes the logic function,
-// and writes the result as JSON. When the logic function returns a nil value
-// it responds with 204 No Content instead of a JSON null body.
+// HandleT wraps a generic HandlerFunc into a standard http.HandlerFunc.
+// It automatically decodes the request body into T, invokes the handler
+// function, and writes the result as JSON. When the handler function returns
+// a nil value it responds with 204 No Content instead of a JSON null body.
 //
-// HandleT 将泛型 LogicFunc 包装为标准 http.HandlerFunc。
-// 它自动将请求体解码为 T，调用业务逻辑函数，并将结果写为 JSON。
-// 当逻辑函数返回 nil 值时，返回 204 No Content 而非 JSON null 响应体。
-func HandleT[T any](logicFn types.LogicFunc[T]) func(w http.ResponseWriter, r *http.Request) {
+// HandleT 将泛型 HandlerFunc 包装为标准 http.HandlerFunc。
+// 它自动将请求体解码为 T，调用处理函数，并将结果写为 JSON。
+// 当处理函数返回 nil 值时，返回 204 No Content 而非 JSON null 响应体。
+func HandleT[T, R any](handlerFn types.HandlerFunc[T, R]) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req T
 		if err := Bind(r, &req); err != nil {
@@ -27,7 +27,7 @@ func HandleT[T any](logicFn types.LogicFunc[T]) func(w http.ResponseWriter, r *h
 		}
 		// do something with req
 		ctx := r.Context()
-		res, err := logicFn(ctx, req)
+		res, err := handlerFn(ctx, req)
 		if err != nil {
 			if e, ok := err.(*types.HTTPError); ok {
 				WriteJSON(w, e.Code, e)
@@ -38,7 +38,7 @@ func HandleT[T any](logicFn types.LogicFunc[T]) func(w http.ResponseWriter, r *h
 			return
 		}
 		// then write response to w
-		if res == nil {
+		if IsNil(res) {
 			WriteNoContent(w)
 		} else {
 			WriteJSON(w, http.StatusOK, res)
