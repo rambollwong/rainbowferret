@@ -317,58 +317,58 @@ func (g *Group) StaticFS(pattern string, fsys fs.FS) {
 	g.handle(http.MethodGet, pattern, handler.ServeHTTP)
 }
 
-// GetLogic registers a GET handler backed by a generic LogicFunc.
+// GetHandler registers a GET handler backed by a generic HandlerFunc.
 // The request body is automatically decoded into T, and the response is
 // automatically JSON-encoded.
 //
-// GetLogic 注册一个由泛型 LogicFunc 支持的 GET 处理器。
+// GetHandler 注册一个由泛型 HandlerFunc 支持的 GET 处理器。
 // 请求体自动解码为 T，响应自动 JSON 编码。
-func GetLogic[T any](g *Group, pattern string, logicFn types.LogicFunc[T], mws ...Middleware) {
-	g.Get(pattern, util.HandleT(logicFn), mws...)
+func GetHandler[T any](g *Group, pattern string, handlerFn types.HandlerFunc[T], mws ...Middleware) {
+	g.Get(pattern, util.HandleT(handlerFn), mws...)
 }
 
-// PostLogic registers a POST handler backed by a generic LogicFunc.
+// PostHandler registers a POST handler backed by a generic HandlerFunc.
 // The request body is automatically decoded into T, and the response is
 // automatically JSON-encoded.
 //
-// PostLogic 注册一个由泛型 LogicFunc 支持的 POST 处理器。
+// PostHandler 注册一个由泛型 HandlerFunc 支持的 POST 处理器。
 // 请求体自动解码为 T，响应自动 JSON 编码。
-func PostLogic[T any](g *Group, pattern string, logicFn types.LogicFunc[T], mws ...Middleware) {
-	g.Post(pattern, util.HandleT(logicFn), mws...)
+func PostHandler[T any](g *Group, pattern string, handlerFn types.HandlerFunc[T], mws ...Middleware) {
+	g.Post(pattern, util.HandleT(handlerFn), mws...)
 }
 
-// DeleteLogic registers a DELETE handler backed by a generic LogicFunc.
+// DeleteHandler registers a DELETE handler backed by a generic HandlerFunc.
 //
-// DeleteLogic 注册一个由泛型 LogicFunc 支持的 DELETE 处理器。
-func DeleteLogic[T any](g *Group, pattern string, logicFn types.LogicFunc[T], mws ...Middleware) {
-	g.Delete(pattern, util.HandleT(logicFn), mws...)
+// DeleteHandler 注册一个由泛型 HandlerFunc 支持的 DELETE 处理器。
+func DeleteHandler[T any](g *Group, pattern string, handlerFn types.HandlerFunc[T], mws ...Middleware) {
+	g.Delete(pattern, util.HandleT(handlerFn), mws...)
 }
 
-// OptionsLogic registers an OPTIONS handler backed by a generic LogicFunc.
+// OptionsHandler registers an OPTIONS handler backed by a generic HandlerFunc.
 //
-// OptionsLogic 注册一个由泛型 LogicFunc 支持的 OPTIONS 处理器。
-func OptionsLogic[T any](g *Group, pattern string, logicFn types.LogicFunc[T], mws ...Middleware) {
-	g.Options(pattern, util.HandleT(logicFn), mws...)
+// OptionsHandler 注册一个由泛型 HandlerFunc 支持的 OPTIONS 处理器。
+func OptionsHandler[T any](g *Group, pattern string, handlerFn types.HandlerFunc[T], mws ...Middleware) {
+	g.Options(pattern, util.HandleT(handlerFn), mws...)
 }
 
-// PatchLogic registers a PATCH handler backed by a generic LogicFunc.
+// PatchHandler registers a PATCH handler backed by a generic HandlerFunc.
 //
-// PatchLogic 注册一个由泛型 LogicFunc 支持的 PATCH 处理器。
-func PatchLogic[T any](g *Group, pattern string, logicFn types.LogicFunc[T], mws ...Middleware) {
-	g.Patch(pattern, util.HandleT(logicFn), mws...)
+// PatchHandler 注册一个由泛型 HandlerFunc 支持的 PATCH 处理器。
+func PatchHandler[T any](g *Group, pattern string, handlerFn types.HandlerFunc[T], mws ...Middleware) {
+	g.Patch(pattern, util.HandleT(handlerFn), mws...)
 }
 
-// PutLogic registers a PUT handler backed by a generic LogicFunc.
+// PutHandler registers a PUT handler backed by a generic HandlerFunc.
 //
-// PutLogic 注册一个由泛型 LogicFunc 支持的 PUT 处理器。
-func PutLogic[T any](g *Group, pattern string, logicFn types.LogicFunc[T], mws ...Middleware) {
-	g.Put(pattern, util.HandleT(logicFn), mws...)
+// PutHandler 注册一个由泛型 HandlerFunc 支持的 PUT 处理器。
+func PutHandler[T any](g *Group, pattern string, handlerFn types.HandlerFunc[T], mws ...Middleware) {
+	g.Put(pattern, util.HandleT(handlerFn), mws...)
 }
 
-// MethodLogic registers a handler for the given HTTP method, backed by a
-// generic LogicFunc.
+// MethodHandler registers a handler for the given HTTP method, backed by a
+// generic HandlerFunc.
 //
-// MethodLogic 为指定 HTTP 方法注册一个由泛型 LogicFunc 支持的处理器。
-func MethodLogic[T any](g *Group, method, pattern string, logicFn types.LogicFunc[T], mws ...Middleware) {
-	g.MethodFunc(method, pattern, util.HandleT(logicFn), mws...)
+// MethodHandler 为指定 HTTP 方法注册一个由泛型 HandlerFunc 支持的处理器。
+func MethodHandler[T any](g *Group, method, pattern string, handlerFn types.HandlerFunc[T], mws ...Middleware) {
+	g.MethodFunc(method, pattern, util.HandleT(handlerFn), mws...)
 }
