@@ -14,7 +14,7 @@ import (
 // HandleT 将泛型 HandlerFunc 包装为标准 http.HandlerFunc。
 // 它自动将请求体解码为 T，调用处理函数，并将结果写为 JSON。
 // 当处理函数返回 nil 值时，返回 204 No Content 而非 JSON null 响应体。
-func HandleT[T any](handlerFn types.HandlerFunc[T]) func(w http.ResponseWriter, r *http.Request) {
+func HandleT[T, R any](handlerFn types.HandlerFunc[T, R]) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req T
 		if err := Bind(r, &req); err != nil {
@@ -38,7 +38,7 @@ func HandleT[T any](handlerFn types.HandlerFunc[T]) func(w http.ResponseWriter, 
 			return
 		}
 		// then write response to w
-		if res == nil {
+		if IsNil(res) {
 			WriteNoContent(w)
 		} else {
 			WriteJSON(w, http.StatusOK, res)

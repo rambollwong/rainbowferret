@@ -16,7 +16,7 @@ without pulling in a third-party router.
 - **Zero router dependency** — sits on top of `net/http.ServeMux` and uses its
   native method-prefixed patterns (`GET /path`, `POST /path`) and path wildcards
   (`{id}`).
-- **Generic handlers** — `HandlerFunc[T]` functions receive a typed request
+- **Generic handlers** — `HandlerFunc[T, R]` functions receive a typed request
   struct, return a typed response and an error; the framework handles JSON
   decoding/encoding automatically.
 - **Middleware chain** — `Middleware` is the familiar `func(http.Handler)
@@ -92,7 +92,7 @@ type CreateReq struct {
     Email string `json:"email"`
 }
 
-ferret.PostHandler(v1, "/users", func(ctx context.Context, req CreateReq) (any, error) {
+ferret.PostHandler(v1, "/users", func(ctx context.Context, req CreateReq) (map[string]string, error) {
     // req is auto-decoded from JSON body, response auto-encoded
     return map[string]string{"id": "42", "name": req.Name}, nil
 })
@@ -152,16 +152,31 @@ levels:
 
 ### Generic handlers
 
+The generic handler types use separate request (T) and response (R) type
+parameters and work on every Go version (1.18+):
+
 ```go
-type HandlerFunc[T any] func(ctx context.Context, req T) (res any, err error)
+type Handler[T, R any] interface {
+    Handle(ctx context.Context, req T) (res R, err error)
+}
+type HandlerFunc[T, R any] func(ctx context.Context, req T) (res R, err error)
 ```
 
-`HandlerFunc[T]` encapsulates a three-step flow: **decode → execute → encode**.
-The framework decodes the request body into type `T`, calls your function, and
-writes the result as JSON. Returning `nil, nil` produces `204 No Content`.
+They encapsulate a three-step flow: **decode → handle → encode**. The framework
+decodes the request body into `T`, calls your handler, and writes the result as
+JSON. A nil result produces `204 No Content` (detected via `util.IsNil`).
 
-Helper registration functions — `ferret.GetHandler`, `ferret.PostHandler`,
-`ferret.DeleteHandler`, etc. — wire a `HandlerFunc[T]` directly onto a group.
+Registration has two forms:
+
+```go
+// Package-level function — works on every Go version (1.18+).
+ferret.GetHandler(api, "/users/{id}", getUser)     // func(ctx, struct{}) (UserResp, error)
+ferret.PostHandler(api, "/users", createUser)
+
+// Method-style on *Group — Go 1.27+ only (uses generic methods).
+api.GetHandler("/users/{id}", GetUserHandler{})    // implements types.Handler[T, R]
+api.PostHandler("/users", CreateUserHandler{})
+```
 
 ## Built-in Middleware
 
@@ -186,7 +201,8 @@ and can be combined freely with `ferret.Chain`.
 
 | Function | Description |
 | -------- | ----------- |
-| `HandleT(handlerFn)` | Wraps a `HandlerFunc[T]` into a standard `http.HandlerFunc`. |
+| `HandleT(handlerFn)` | Wraps a `HandlerFunc[T, R]` into a standard `http.HandlerFunc`. |
+| `IsNil(v)` | Reports whether `v` is nil, including typed nils (pointer, slice, map, chan, func, interface). |
 | `Bind(r, &v)` | Auto-binds the request body to a struct based on `Content-Type` (JSON, XML, form). |
 | `DecodeJSON / DecodeXML / DecodeForm` | Decode the request body for JSON, XML, or form data. |
 | `WriteJSON / WriteXML / WriteText / WriteNoContent` | Write common response formats. |
@@ -199,7 +215,7 @@ and can be combined freely with `ferret.Chain`.
 | Type | Description |
 | ---- | ----------- |
 | `HTTPError` | A standard error carrying an HTTP status code. |
-| `Handler[T]` / `HandlerFunc[T]` | The generic handler interface and function type. |
+| `Handler[T, R]` / `HandlerFunc[T, R]` | The generic handler interface and function type with separate request/response types. |
 | `BadRequest / NotFound / Internal / …` | Factory functions for common `HTTPError` status codes. |
 
 ## Examples

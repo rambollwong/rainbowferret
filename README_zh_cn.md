@@ -14,7 +14,7 @@ RainbowFerret 是一个轻量级的 Go HTTP 框架，直接构建在 Go 1.22+ �
 
 - **零路由依赖** — 基于标准库 `net/http.ServeMux`，直接使用原生的方法前缀模式
   （`GET /path`、`POST /path`）和路径通配符（`{id}`）。
-- **泛型处理器** — `HandlerFunc[T]` 函数接收一个类型化的请求结构体，返回响应
+- **泛型处理器** — `HandlerFunc[T, R]` 函数接收一个类型化的请求结构体，返回响应
   和错误；框架自动完成 JSON 解码与编码。
 - **中间件链** — `Middleware` 即经典的 `func(http.Handler) http.Handler` 模式。
   通过 `Chain` 组合多个中间件，或按分组/路由单独挂载。
@@ -85,7 +85,7 @@ type CreateReq struct {
     Email string `json:"email"`
 }
 
-ferret.PostHandler(v1, "/users", func(ctx context.Context, req CreateReq) (any, error) {
+ferret.PostHandler(v1, "/users", func(ctx context.Context, req CreateReq) (map[string]string, error) {
     // 请求体自动解码为 CreateReq，响应自动 JSON 编码
     return map[string]string{"id": "42", "name": req.Name}, nil
 })
@@ -139,16 +139,31 @@ type Middleware func(next http.Handler) http.Handler
 
 ### 泛型处理器
 
+泛型处理器类型使用分离的请求（T）与响应（R）类型参数，在所有 Go 版本（1.18+）
+均可用：
+
 ```go
-type HandlerFunc[T any] func(ctx context.Context, req T) (res any, err error)
+type Handler[T, R any] interface {
+    Handle(ctx context.Context, req T) (res R, err error)
+}
+type HandlerFunc[T, R any] func(ctx context.Context, req T) (res R, err error)
 ```
 
-`HandlerFunc[T]` 封装了 **解码 → 执行 → 编码** 三步流程：框架将请求体解码为类型
-`T`，调用你的业务函数，最后将结果以 JSON 写入响应。返回 `nil, nil` 时自动产生
-`204 No Content`。
+它们封装了 **解码 → 处理 → 编码** 三步流程：框架将请求体解码为 `T`，调用你的
+处理器，最后将结果以 JSON 写入响应。nil 结果产生 `204 No Content`（通过
+`util.IsNil` 检测）。
 
-辅助注册函数 — `ferret.GetHandler`、`ferret.PostHandler`、`ferret.DeleteHandler` 等 —
-可直接将 `HandlerFunc[T]` 注册到分组上。
+注册有两种形式：
+
+```go
+// 包级函数 — 在所有 Go 版本（1.18+）均可用。
+ferret.GetHandler(api, "/users/{id}", getUser)     // func(ctx, struct{}) (UserResp, error)
+ferret.PostHandler(api, "/users", createUser)
+
+// *Group 上的方法式调用 — 仅 Go 1.27+（使用泛型方法）。
+api.GetHandler("/users/{id}", GetUserHandler{})    // 实现 types.Handler[T, R]
+api.PostHandler("/users", CreateUserHandler{})
+```
 
 ## 内置中间件
 
@@ -173,7 +188,8 @@ type HandlerFunc[T any] func(ctx context.Context, req T) (res any, err error)
 
 | 函数 | 说明 |
 | ---- | ---- |
-| `HandleT(handlerFn)` | 将 `HandlerFunc[T]` 包装为标准 `http.HandlerFunc`。 |
+| `HandleT(handlerFn)` | 将 `HandlerFunc[T, R]` 包装为标准 `http.HandlerFunc`。 |
+| `IsNil(v)` | 判断 `v` 是否为 nil，包括带类型 nil（指针、slice、map、chan、func、interface）。 |
 | `Bind(r, &v)` | 根据 `Content-Type` 自动将请求体绑定到结构体（JSON、XML、表单）。 |
 | `DecodeJSON / DecodeXML / DecodeForm` | 为 JSON、XML 或表单数据解码请求体。 |
 | `WriteJSON / WriteXML / WriteText / WriteNoContent` | 写入常见格式的响应。 |
@@ -186,7 +202,7 @@ type HandlerFunc[T any] func(ctx context.Context, req T) (res any, err error)
 | 类型 | 说明 |
 | ---- | ---- |
 | `HTTPError` | 携带 HTTP 状态码的标准错误类型。 |
-| `Handler[T]` / `HandlerFunc[T]` | 泛型处理器的接口与函数类型。 |
+| `Handler[T, R]` / `HandlerFunc[T, R]` | 泛型处理器接口与函数类型，请求/响应类型分离。 |
 | `BadRequest / NotFound / Internal / …` | 常用 `HTTPError` 的工厂函数。 |
 
 ## 示例
