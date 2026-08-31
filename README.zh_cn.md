@@ -31,7 +31,7 @@ RainbowFerret 是一个轻量级的 Go HTTP 框架，直接构建在 Go 1.22+ �
 ## 安装
 
 ```bash
-go get github.com/rambollwong/rainbowferret
+go get github.com/rambollwong/rainbowferret@latest
 ```
 
 需要 **Go 1.22 及以上**版本。
@@ -167,17 +167,17 @@ api.PostHandler("/users", CreateUserHandler{})
 
 ## 内置中间件
 
-| 中间件 | 签名 | 说明 |
-| ------ | ---- | ---- |
-| **Recoverer** | `middleware.Recoverer` | 从 panic 中恢复，记录堆栈，返回 `500`（若 panic 值为 `*types.HTTPError` 则使用其状态码）。 |
-| **Logger** | `middleware.Logger()` | 记录每个请求的日志：方法、路径、状态码、耗时、响应体大小。可通过 `LoggerWithConfig(cfg)` 配置。 |
-| **RequestID** | `middleware.RequestID()` | 为每个请求确保唯一 ID。从 `X-Request-ID` 头读取（支持分布式追踪透传），或生成带主机名前缀的 ID。使用 `crypto/rand`。 |
-| **Timeout** | `middleware.Timeout(d)` | 在指定时长后取消请求 context。若 handler 尚未响应则返回 `504 Gateway Timeout`。 |
-| **ClientIP** | `middleware.ClientIP()` | 从 `RemoteAddr` 解析客户端 IP，可开启 `TrustProxy` 支持代理头。 |
-| **ContentType** | `middleware.ContentType("application/json", ...)` | 拒绝 `Content-Type` 不在允许列表中的请求，返回 `415`。跳过无请求体的方法（GET、HEAD 等）。 |
-| **ContentCharset** | `middleware.ContentCharset("utf-8")` | 拒绝 `Content-Type` 中 charset 参数不合规的请求。 |
-| **ContentEncoding** | `middleware.ContentEncoding("identity")` | 拒绝 `Content-Encoding` 头不合规的请求。 |
-| **Compress** | `middleware.Compress(level ...)` | 通过 `Accept-Encoding` 协商，使用 gzip 或 deflate 压缩响应体。 |
+| 中间件              | 签名                                              | 说明                                                                                                                 |
+| ------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Recoverer**       | `middleware.Recoverer`                            | 从 panic 中恢复，记录堆栈，返回 `500`（若 panic 值为 `*types.HTTPError` 则使用其状态码）。                           |
+| **Logger**          | `middleware.Logger()`                             | 记录每个请求的日志：方法、路径、状态码、耗时、响应体大小。可通过 `LoggerWithConfig(cfg)` 配置。                      |
+| **RequestID**       | `middleware.RequestID()`                          | 为每个请求确保唯一 ID。从 `X-Request-ID` 头读取（支持分布式追踪透传），或生成带主机名前缀的 ID。使用 `crypto/rand`。 |
+| **Timeout**         | `middleware.Timeout(d)`                           | 在指定时长后取消请求 context。若 handler 尚未响应则返回 `504 Gateway Timeout`。                                      |
+| **ClientIP**        | `middleware.ClientIP()`                           | 从 `RemoteAddr` 解析客户端 IP，可开启 `TrustProxy` 支持代理头。                                                      |
+| **ContentType**     | `middleware.ContentType("application/json", ...)` | 拒绝 `Content-Type` 不在允许列表中的请求，返回 `415`。跳过无请求体的方法（GET、HEAD 等）。                           |
+| **ContentCharset**  | `middleware.ContentCharset("utf-8")`              | 拒绝 `Content-Type` 中 charset 参数不合规的请求。                                                                    |
+| **ContentEncoding** | `middleware.ContentEncoding("identity")`          | 拒绝 `Content-Encoding` 头不合规的请求。                                                                             |
+| **Compress**        | `middleware.Compress(level ...)`                  | 通过 `Accept-Encoding` 协商，使用 gzip 或 deflate 压缩响应体。                                                       |
 
 所有中间件均遵循标准的 `func(http.Handler) http.Handler` 签名，可通过
 `ferret.Chain` 自由组合。
@@ -186,34 +186,34 @@ api.PostHandler("/users", CreateUserHandler{})
 
 ### `util` — 处理器辅助函数
 
-| 函数 | 说明 |
-| ---- | ---- |
-| `HandleT(handlerFn)` | 将 `HandlerFunc[T, R]` 包装为标准 `http.HandlerFunc`。 |
-| `IsNil(v)` | 判断 `v` 是否为 nil，包括带类型 nil（指针、slice、map、chan、func、interface）。 |
-| `Bind(r, &v)` | 根据 `Content-Type` 自动将请求体绑定到结构体（JSON、XML、表单）。 |
-| `DecodeJSON / DecodeXML / DecodeForm` | 为 JSON、XML 或表单数据解码请求体。 |
-| `WriteJSON / WriteXML / WriteText / WriteNoContent` | 写入常见格式的响应。 |
-| `WriteStream(w, code, contentType, reader)` | 流式输出响应（适用于文件下载或 SSE）。 |
-| `PathParam(r, name)` / `QueryParam(r, name)` | 读取路径通配符和查询参数，提供 `Int`、`Float`、`Bool`、`Int64` 等类型变体。 |
-| `Validator` 接口 | 若绑定的结构体实现了 `Validate() error`，绑定后自动调用校验。 |
+| 函数                                                | 说明                                                                             |
+| --------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `HandleT(handlerFn)`                                | 将 `HandlerFunc[T, R]` 包装为标准 `http.HandlerFunc`。                           |
+| `IsNil(v)`                                          | 判断 `v` 是否为 nil，包括带类型 nil（指针、slice、map、chan、func、interface）。 |
+| `Bind(r, &v)`                                       | 根据 `Content-Type` 自动将请求体绑定到结构体（JSON、XML、表单）。                |
+| `DecodeJSON / DecodeXML / DecodeForm`               | 为 JSON、XML 或表单数据解码请求体。                                              |
+| `WriteJSON / WriteXML / WriteText / WriteNoContent` | 写入常见格式的响应。                                                             |
+| `WriteStream(w, code, contentType, reader)`         | 流式输出响应（适用于文件下载或 SSE）。                                           |
+| `PathParam(r, name)` / `QueryParam(r, name)`        | 读取路径通配符和查询参数，提供 `Int`、`Float`、`Bool`、`Int64` 等类型变体。      |
+| `Validator` 接口                                    | 若绑定的结构体实现了 `Validate() error`，绑定后自动调用校验。                    |
 
 ### `types` — 共享类型
 
-| 类型 | 说明 |
-| ---- | ---- |
-| `HTTPError` | 携带 HTTP 状态码的标准错误类型。 |
-| `Handler[T, R]` / `HandlerFunc[T, R]` | 泛型处理器接口与函数类型，请求/响应类型分离。 |
-| `BadRequest / NotFound / Internal / …` | 常用 `HTTPError` 的工厂函数。 |
+| 类型                                   | 说明                                          |
+| -------------------------------------- | --------------------------------------------- |
+| `HTTPError`                            | 携带 HTTP 状态码的标准错误类型。              |
+| `Handler[T, R]` / `HandlerFunc[T, R]`  | 泛型处理器接口与函数类型，请求/响应类型分离。 |
+| `BadRequest / NotFound / Internal / …` | 常用 `HTTPError` 的工厂函数。                 |
 
 ## 示例
 
-| 示例 | 运行命令 |
-| ---- | -------- |
-| Hello World | `go run _examples/hello-world/main.go` |
-| 静态文件 | `go run _examples/static-files/main.go` |
-| 子分组与中间件 | `go run _examples/sub-group/main.go` |
-| 中间件组合 | `go run _examples/middleware/main.go` |
-| REST API（使用泛型处理器） | `go run _examples/rest-api/main.go` |
+| 示例                       | 运行命令                                |
+| -------------------------- | --------------------------------------- |
+| Hello World                | `go run _examples/hello-world/main.go`  |
+| 静态文件                   | `go run _examples/static-files/main.go` |
+| 子分组与中间件             | `go run _examples/sub-group/main.go`    |
+| 中间件组合                 | `go run _examples/middleware/main.go`   |
+| REST API（使用泛型处理器） | `go run _examples/rest-api/main.go`     |
 
 **hello-world** 示例展示了最简用法：一个根分组配两条 GET 路由，使用标准
 `http.HandlerFunc` 处理器。

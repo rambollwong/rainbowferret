@@ -20,7 +20,7 @@ without pulling in a third-party router.
   struct, return a typed response and an error; the framework handles JSON
   decoding/encoding automatically.
 - **Middleware chain** — `Middleware` is the familiar `func(http.Handler)
-  http.Handler`. Use `Chain` to compose multiple middleware or attach them
+http.Handler`. Use `Chain` to compose multiple middleware or attach them
   per-group / per-route.
 - **Sub-groups with prefix inheritance** — `Group("/prefix")` creates a child
   group that inherits the parent's middleware and shares the underlying mux, so
@@ -38,7 +38,7 @@ without pulling in a third-party router.
 ## Installation
 
 ```bash
-go get github.com/rambollwong/rainbowferret
+go get github.com/rambollwong/rainbowferret@latest
 ```
 
 Requires **Go 1.22 or later**.
@@ -180,17 +180,17 @@ api.PostHandler("/users", CreateUserHandler{})
 
 ## Built-in Middleware
 
-| Middleware | Signature | Description |
-| ---------- | --------- | ----------- |
-| **Recoverer** | `middleware.Recoverer` | Recovers from panics, logs the stack trace, and responds with `500` (or the code carried by `*types.HTTPError`). |
-| **Logger** | `middleware.Logger()` | Logs every request: method, path, status, duration, body size. Configurable via `LoggerWithConfig(cfg)`. |
-| **RequestID** | `middleware.RequestID()` | Ensures a unique request ID on every request. Reads from `X-Request-ID` header (for trace propagation) or generates one with a hostname prefix. Uses `crypto/rand`. |
-| **Timeout** | `middleware.Timeout(d)` | Cancels the request context after the given duration. Sends `504 Gateway Timeout` if the handler hasn't responded. |
-| **ClientIP** | `middleware.ClientIP()` | Resolves the client IP from `RemoteAddr`, with optional proxy-header support (`TrustProxy`). |
-| **ContentType** | `middleware.ContentType("application/json", ...)` | Rejects requests whose `Content-Type` is not in the allowed list with `415`. Skips body-less methods (GET, HEAD, …). |
-| **ContentCharset** | `middleware.ContentCharset("utf-8")` | Rejects requests with an unsupported charset parameter in `Content-Type`. |
-| **ContentEncoding** | `middleware.ContentEncoding("identity")` | Rejects requests with an unsupported `Content-Encoding` header. |
-| **Compress** | `middleware.Compress(level ...)` | Compresses response bodies with gzip or deflate, negotiated via `Accept-Encoding`. |
+| Middleware          | Signature                                         | Description                                                                                                                                                         |
+| ------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Recoverer**       | `middleware.Recoverer`                            | Recovers from panics, logs the stack trace, and responds with `500` (or the code carried by `*types.HTTPError`).                                                    |
+| **Logger**          | `middleware.Logger()`                             | Logs every request: method, path, status, duration, body size. Configurable via `LoggerWithConfig(cfg)`.                                                            |
+| **RequestID**       | `middleware.RequestID()`                          | Ensures a unique request ID on every request. Reads from `X-Request-ID` header (for trace propagation) or generates one with a hostname prefix. Uses `crypto/rand`. |
+| **Timeout**         | `middleware.Timeout(d)`                           | Cancels the request context after the given duration. Sends `504 Gateway Timeout` if the handler hasn't responded.                                                  |
+| **ClientIP**        | `middleware.ClientIP()`                           | Resolves the client IP from `RemoteAddr`, with optional proxy-header support (`TrustProxy`).                                                                        |
+| **ContentType**     | `middleware.ContentType("application/json", ...)` | Rejects requests whose `Content-Type` is not in the allowed list with `415`. Skips body-less methods (GET, HEAD, …).                                                |
+| **ContentCharset**  | `middleware.ContentCharset("utf-8")`              | Rejects requests with an unsupported charset parameter in `Content-Type`.                                                                                           |
+| **ContentEncoding** | `middleware.ContentEncoding("identity")`          | Rejects requests with an unsupported `Content-Encoding` header.                                                                                                     |
+| **Compress**        | `middleware.Compress(level ...)`                  | Compresses response bodies with gzip or deflate, negotiated via `Accept-Encoding`.                                                                                  |
 
 All middleware follow the standard `func(http.Handler) http.Handler` signature
 and can be combined freely with `ferret.Chain`.
@@ -199,34 +199,34 @@ and can be combined freely with `ferret.Chain`.
 
 ### `util` — helpers for handlers
 
-| Function | Description |
-| -------- | ----------- |
-| `HandleT(handlerFn)` | Wraps a `HandlerFunc[T, R]` into a standard `http.HandlerFunc`. |
-| `IsNil(v)` | Reports whether `v` is nil, including typed nils (pointer, slice, map, chan, func, interface). |
-| `Bind(r, &v)` | Auto-binds the request body to a struct based on `Content-Type` (JSON, XML, form). |
-| `DecodeJSON / DecodeXML / DecodeForm` | Decode the request body for JSON, XML, or form data. |
-| `WriteJSON / WriteXML / WriteText / WriteNoContent` | Write common response formats. |
-| `WriteStream(w, code, contentType, reader)` | Stream arbitrary data to the response (useful for file downloads or SSE). |
-| `PathParam(r, name)` / `QueryParam(r, name)` | Read path wildcards and query parameters with typed variants (`Int`, `Float`, `Bool`, `Int64`). |
-| `Validator` interface | If the bound struct implements `Validate() error`, it is called automatically after binding. |
+| Function                                            | Description                                                                                     |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `HandleT(handlerFn)`                                | Wraps a `HandlerFunc[T, R]` into a standard `http.HandlerFunc`.                                 |
+| `IsNil(v)`                                          | Reports whether `v` is nil, including typed nils (pointer, slice, map, chan, func, interface).  |
+| `Bind(r, &v)`                                       | Auto-binds the request body to a struct based on `Content-Type` (JSON, XML, form).              |
+| `DecodeJSON / DecodeXML / DecodeForm`               | Decode the request body for JSON, XML, or form data.                                            |
+| `WriteJSON / WriteXML / WriteText / WriteNoContent` | Write common response formats.                                                                  |
+| `WriteStream(w, code, contentType, reader)`         | Stream arbitrary data to the response (useful for file downloads or SSE).                       |
+| `PathParam(r, name)` / `QueryParam(r, name)`        | Read path wildcards and query parameters with typed variants (`Int`, `Float`, `Bool`, `Int64`). |
+| `Validator` interface                               | If the bound struct implements `Validate() error`, it is called automatically after binding.    |
 
 ### `types` — shared types
 
-| Type | Description |
-| ---- | ----------- |
-| `HTTPError` | A standard error carrying an HTTP status code. |
-| `Handler[T, R]` / `HandlerFunc[T, R]` | The generic handler interface and function type with separate request/response types. |
-| `BadRequest / NotFound / Internal / …` | Factory functions for common `HTTPError` status codes. |
+| Type                                   | Description                                                                           |
+| -------------------------------------- | ------------------------------------------------------------------------------------- |
+| `HTTPError`                            | A standard error carrying an HTTP status code.                                        |
+| `Handler[T, R]` / `HandlerFunc[T, R]`  | The generic handler interface and function type with separate request/response types. |
+| `BadRequest / NotFound / Internal / …` | Factory functions for common `HTTPError` status codes.                                |
 
 ## Examples
 
-| Example | Command |
-| ------- | ------- |
-| Hello World | `go run _examples/hello-world/main.go` |
-| Static files | `go run _examples/static-files/main.go` |
-| Sub-groups & middleware | `go run _examples/sub-group/main.go` |
-| Middleware combo | `go run _examples/middleware/main.go` |
-| REST API with generic handlers | `go run _examples/rest-api/main.go` |
+| Example                        | Command                                 |
+| ------------------------------ | --------------------------------------- |
+| Hello World                    | `go run _examples/hello-world/main.go`  |
+| Static files                   | `go run _examples/static-files/main.go` |
+| Sub-groups & middleware        | `go run _examples/sub-group/main.go`    |
+| Middleware combo               | `go run _examples/middleware/main.go`   |
+| REST API with generic handlers | `go run _examples/rest-api/main.go`     |
 
 The **hello-world** example shows minimal usage: a root group with two GET
 routes and standard `http.HandlerFunc` handlers.
