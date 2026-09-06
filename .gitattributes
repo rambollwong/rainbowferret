@@ -7,3 +7,4 @@ README.zh_cn.md export-ignore
 makefile export-ignore
 *_test.go export-ignore
 pretty.png export-ignore
+_examples/ export-ignore

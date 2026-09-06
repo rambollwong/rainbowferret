@@ -2,6 +2,7 @@ package util
 
 import (
 	"net/http"
+	"reflect"
 
 	"github.com/rambollwong/rainbowferret/types"
 )
@@ -17,7 +18,7 @@ import (
 func HandleT[T, R any](handlerFn types.HandlerFunc[T, R]) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req T
-		if err := Bind(r, &req); err != nil {
+		if err := bindRequest(r, &req); err != nil {
 			e, ok := err.(*types.HTTPError)
 			if !ok {
 				e = types.BadRequest(err.Error())
@@ -44,4 +45,25 @@ func HandleT[T, R any](handlerFn types.HandlerFunc[T, R]) func(w http.ResponseWr
 			WriteJSON(w, http.StatusOK, res)
 		}
 	}
+}
+
+// bindRequest binds the request into target. When T is a pointer type it first
+// allocates the pointed-to zero value so Bind receives a pointer to a struct
+// (not a pointer to a pointer), which Bind's form/param filling requires.
+//
+// bindRequest 将请求绑定到 target。当 T 是指针类型时，先分配其指向的零值，
+// 使 Bind 接收到指向结构体的指针（而非指向指针的指针），满足 Bind 的表单/
+// 参数填充要求。
+func bindRequest[T any](r *http.Request, target *T) error {
+	rv := reflect.ValueOf(target)
+	if rv.Kind() == reflect.Pointer && !rv.IsNil() {
+		elem := rv.Elem()
+		if elem.Kind() == reflect.Pointer {
+			if elem.IsNil() {
+				elem.Set(reflect.New(elem.Type().Elem()))
+			}
+			return Bind(r, elem.Interface())
+		}
+	}
+	return Bind(r, target)
 }
