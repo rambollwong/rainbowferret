@@ -21,3 +21,13 @@ type HandlerFunc[T, R any] func(ctx context.Context, req T) (res R, err error)
 func (f HandlerFunc[T, R]) Handle(ctx context.Context, req T) (res R, err error) {
 	return f(ctx, req)
 }
+
+// SuccessStatuser is implemented by request types that want to control the
+// success HTTP status code written for a non-nil response. When the bound
+// request implements it, its return value replaces the default 200 OK.
+//
+// SuccessStatuser 由希望控制非 nil 响应成功状态码的请求类型实现。
+// 当绑定后的请求实现该接口时，其返回值替代默认的 200 OK。
+type SuccessStatuser interface {
+	SuccessStatus() int
+}
