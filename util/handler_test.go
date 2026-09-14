@@ -64,18 +64,21 @@ func TestHandleTValueRequest(t *testing.T) {
 	}
 }
 
-// createdReq implements types.SuccessStatuser, returning 201 Created.
-// createdReq 实现 types.SuccessStatuser，返回 201 Created。
-type createdReq struct {
-	Name string `json:"name"`
+// createdResp implements types.SuccessStatuser, returning 201 Created.
+// createdResp 实现 types.SuccessStatuser，返回 201 Created。
+type createdResp struct {
+	ID string `json:"id"`
 }
 
-func (createdReq) SuccessStatus() int { return http.StatusCreated }
+func (createdResp) SuccessStatus() int { return http.StatusCreated }
 
 func TestHandleTSuccessStatus(t *testing.T) {
-	h := HandleT[createdReq, map[string]string](
-		func(ctx context.Context, req createdReq) (map[string]string, error) {
-			return map[string]string{"name": req.Name}, nil
+	type createReq struct {
+		Name string `json:"name"`
+	}
+	h := HandleT[createReq, createdResp](
+		func(ctx context.Context, req createReq) (createdResp, error) {
+			return createdResp{ID: "1"}, nil
 		},
 	)
 
@@ -87,7 +90,7 @@ func TestHandleTSuccessStatus(t *testing.T) {
 	if w.Code != http.StatusCreated {
 		t.Fatalf("expected 201, got %d body=%q", w.Code, w.Body.String())
 	}
-	if !strings.Contains(w.Body.String(), "alice") {
-		t.Fatalf("expected body to contain alice, got %q", w.Body.String())
+	if !strings.Contains(w.Body.String(), `"id":"1"`) {
+		t.Fatalf("expected body to contain id, got %q", w.Body.String())
 	}
 }

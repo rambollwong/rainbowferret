@@ -12,16 +12,15 @@ import (
 // function, and writes the result as JSON. When the handler function returns
 // a nil value it responds with 204 No Content instead of a JSON null body.
 //
-// When the decoded request implements types.SuccessStatuser, its
-// SuccessStatus() code is used instead of the default 200 OK for a non-nil
-// response (e.g. 201 Created).
+// When the response implements types.SuccessStatuser, its SuccessStatus() code
+// is used instead of the default 200 OK (e.g. 201 Created).
 //
 // HandleT 将泛型 HandlerFunc 包装为标准 http.HandlerFunc。
 // 它自动将请求体解码为 T，调用处理函数，并将结果写为 JSON。
 // 当处理函数返回 nil 值时，返回 204 No Content 而非 JSON null 响应体。
 //
-// 当解码后的请求实现了 types.SuccessStatuser 时，非 nil 响应会使用其
-// SuccessStatus() 返回的状态码替代默认的 200 OK（如 201 Created）。
+// 当响应实现了 types.SuccessStatuser 时，会使用其 SuccessStatus() 返回的
+// 状态码替代默认的 200 OK（如 201 Created）。
 func HandleT[T, R any](handlerFn types.HandlerFunc[T, R]) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req T
@@ -50,7 +49,7 @@ func HandleT[T, R any](handlerFn types.HandlerFunc[T, R]) func(w http.ResponseWr
 			WriteNoContent(w)
 		} else {
 			code := http.StatusOK
-			if ss, ok := any(req).(types.SuccessStatuser); ok {
+			if ss, ok := any(res).(types.SuccessStatuser); ok {
 				code = ss.SuccessStatus()
 			}
 			WriteJSON(w, code, res)
