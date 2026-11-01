@@ -1,4 +1,5 @@
 // Example: serving static files from a local directory and embed.FS.
+//
 // 示例：从本地目录和 embed.FS 提供静态文件服务。
 //
 //	go run _examples/static-files/main.go
@@ -25,11 +26,13 @@ func main() {
 	)
 
 	// Serve from a local directory.
+	//
 	// 从本地目录提供服务。
 	root.Static("/assets", "./public")
 	// → GET /assets/index.html
 
 	// Serve from embedded files (Go 1.16+ embed.FS).
+	//
 	// 从嵌入文件提供服务。
 	sub, _ := fs.Sub(publicFS, "public")
 	root.StaticFS("/embed", sub)

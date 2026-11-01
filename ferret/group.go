@@ -35,6 +35,7 @@ type Group struct {
 }
 
 // sentinel is a no-op handler registered on tree for path matching.
+//
 // sentinel 是一个空操作处理器，注册在 tree 上用于路径匹配。
 var sentinel http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
@@ -71,6 +72,7 @@ func (g *Group) Handler() http.Handler {
 		}
 
 		// No match on main mux — check if the path itself is registered.
+		//
 		// 主 mux 未匹配——检查该路径本身是否已注册。
 		if _, treePattern := g.tree.Handler(r); treePattern != "" {
 			if g.methodNotAllowedFn != nil {
@@ -267,6 +269,7 @@ func (g *Group) handle(method, pattern string, handler http.HandlerFunc, mws ...
 	g.sm.Handle(fullPattern, middlewareChain(handler))
 
 	// Register on the path-only tree for 405 detection (once per path).
+	//
 	// 在纯路径 tree 上注册（每个路径仅一次），用于 405 检测。
 	if _, exists := g.routes[fullPath]; !exists {
 		g.routes[fullPath] = make(map[string]struct{})
@@ -326,36 +329,42 @@ func (g *Group) StaticFS(pattern string, fsys fs.FS) {
 // GetHandler[T, R](...)。
 
 // GetHandler registers a GET handler backed by a generic HandlerFunc.
+//
 // GetHandler 注册一个由泛型 HandlerFunc 支持的 GET 处理器。
 func GetHandler[T, R any](g *Group, pattern string, handlerFn types.HandlerFunc[T, R], mws ...Middleware) {
 	g.Get(pattern, util.HandleT(handlerFn), mws...)
 }
 
 // PostHandler registers a POST handler backed by a generic HandlerFunc.
+//
 // PostHandler 注册一个由泛型 HandlerFunc 支持的 POST 处理器。
 func PostHandler[T, R any](g *Group, pattern string, handlerFn types.HandlerFunc[T, R], mws ...Middleware) {
 	g.Post(pattern, util.HandleT(handlerFn), mws...)
 }
 
 // DeleteHandler registers a DELETE handler backed by a generic HandlerFunc.
+//
 // DeleteHandler 注册一个由泛型 HandlerFunc 支持的 DELETE 处理器。
 func DeleteHandler[T, R any](g *Group, pattern string, handlerFn types.HandlerFunc[T, R], mws ...Middleware) {
 	g.Delete(pattern, util.HandleT(handlerFn), mws...)
 }
 
 // OptionsHandler registers an OPTIONS handler backed by a generic HandlerFunc.
+//
 // OptionsHandler 注册一个由泛型 HandlerFunc 支持的 OPTIONS 处理器。
 func OptionsHandler[T, R any](g *Group, pattern string, handlerFn types.HandlerFunc[T, R], mws ...Middleware) {
 	g.Options(pattern, util.HandleT(handlerFn), mws...)
 }
 
 // PatchHandler registers a PATCH handler backed by a generic HandlerFunc.
+//
 // PatchHandler 注册一个由泛型 HandlerFunc 支持的 PATCH 处理器。
 func PatchHandler[T, R any](g *Group, pattern string, handlerFn types.HandlerFunc[T, R], mws ...Middleware) {
 	g.Patch(pattern, util.HandleT(handlerFn), mws...)
 }
 
 // PutHandler registers a PUT handler backed by a generic HandlerFunc.
+//
 // PutHandler 注册一个由泛型 HandlerFunc 支持的 PUT 处理器。
 func PutHandler[T, R any](g *Group, pattern string, handlerFn types.HandlerFunc[T, R], mws ...Middleware) {
 	g.Put(pattern, util.HandleT(handlerFn), mws...)
@@ -363,6 +372,7 @@ func PutHandler[T, R any](g *Group, pattern string, handlerFn types.HandlerFunc[
 
 // MethodHandler registers a handler for the given HTTP method, backed by a
 // generic HandlerFunc.
+//
 // MethodHandler 为指定 HTTP 方法注册一个由泛型 HandlerFunc 支持的处理器。
 func MethodHandler[T, R any](g *Group, method, pattern string, handlerFn types.HandlerFunc[T, R], mws ...Middleware) {
 	g.MethodFunc(method, pattern, util.HandleT(handlerFn), mws...)

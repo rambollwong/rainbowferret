@@ -14,9 +14,35 @@ import (
 )
 
 // Validator is the interface for validating the decoded value.
+//
 // Validator 是用于校验解码后值的接口。
 type Validator interface {
 	Validate() error
+}
+
+// FormDecoder is implemented by types that decode themselves from the request
+// form data. When the target passed to Bind implements FormDecoder, Bind
+// delegates the form portion to DecodeForm and skips `form` tag filling for it.
+// This suits generated types (e.g. protobuf's .pb.go) whose fields cannot carry
+// struct tags.
+//
+// FormDecoder 由能够从请求表单数据中自行解码的类型实现。当传给 Bind 的目标
+// 实现了 FormDecoder 时，Bind 将表单部分委托给 DecodeForm，并跳过该类型的
+// `form` tag 填充。这适用于无法携带结构体 tag 的生成代码（如 protobuf 的 .pb.go）。
+type FormDecoder interface {
+	DecodeForm(r *http.Request) error
+}
+
+// ParamDecoder is implemented by types that decode themselves from URL
+// parameters (path values and query string). When the target passed to Bind
+// implements ParamDecoder, Bind delegates the param portion to DecodeParam and
+// skips `param` tag filling for it.
+//
+// ParamDecoder 由能够从 URL 参数（路径值与查询串）中自行解码的类型实现。
+// 当传给 Bind 的目标实现了 ParamDecoder 时，Bind 将参数部分委托给 DecodeParam，
+// 并跳过该类型的 `param` tag 填充。
+type ParamDecoder interface {
+	DecodeParam(r *http.Request) error
 }
 
 // Bind binds the request to v automatically according to the Content-Type header,
@@ -24,6 +50,7 @@ type Validator interface {
 // application/x-www-form-urlencoded and multipart/form-data; when Content-Type
 // is missing it falls back to form/query binding.
 // Unsupported media types return a 415 error.
+//
 // Bind 类似 Gin 的 ShouldBind，根据 Content-Type 头自动将请求绑定到 v，
 // 支持 application/json、application/xml、text/xml、
 // application/x-www-form-urlencoded 和 multipart/form-data；
@@ -80,6 +107,7 @@ func Bind(r *http.Request, v any) error {
 
 // DecodeJSON decodes the request body as JSON. It only applies to requests
 // whose Content-Type is application/json; otherwise it returns a 415 error.
+//
 // DecodeJSON 将请求体解码为 JSON，仅针对 Content-Type 为 application/json 的请求，
 // 否则返回 415 错误。
 func DecodeJSON(r *http.Request, v any) error {
@@ -101,6 +129,7 @@ func DecodeJSON(r *http.Request, v any) error {
 
 // DecodeXML decodes the request body as XML. It only applies to requests
 // whose Content-Type is application/xml or text/xml; otherwise it returns a 415 error.
+//
 // DecodeXML 将请求体解码为 XML，仅针对 Content-Type 为 application/xml 或 text/xml
 // 的请求，否则返回 415 错误。
 func DecodeXML(r *http.Request, v any) error {
@@ -126,6 +155,7 @@ func DecodeXML(r *http.Request, v any) error {
 // otherwise it returns a 415 error. The target v can be a *url.Values,
 // a *map[string][]string, or a pointer to a struct whose fields are filled by the
 // `form` tag (falling back to the field name).
+//
 // DecodeForm 将请求体解码为表单数据，仅针对 Content-Type 为
 // application/x-www-form-urlencoded 或 multipart/form-data 的请求，否则返回 415 错误。
 // 目标 v 可以是 *url.Values、*map[string][]string，或指向结构体的指针，
@@ -141,7 +171,11 @@ func DecodeForm(r *http.Request, v any) error {
 		return err
 	}
 
-	if err := fillFromValues(r.Form, v); err != nil {
+	if fd, ok := v.(FormDecoder); ok {
+		if err := fd.DecodeForm(r); err != nil {
+			return err
+		}
+	} else if err := fillFromValues(r.Form, v); err != nil {
 		return err
 	}
 
@@ -152,12 +186,14 @@ func DecodeForm(r *http.Request, v any) error {
 }
 
 // mediaTypeOf returns the media type of the request's Content-Type header.
+//
 // mediaTypeOf 返回请求 Content-Type 头的媒体类型。
 func mediaTypeOf(r *http.Request) string {
 	return strings.TrimSpace(strings.Split(r.Header.Get("Content-Type"), ";")[0])
 }
 
 // parseForm parses the request body according to the media type.
+//
 // parseForm 根据媒体类型解析请求体。
 func parseForm(r *http.Request, mediaType string) error {
 	defer r.Body.Close()
@@ -177,10 +213,16 @@ func parseForm(r *http.Request, mediaType string) error {
 // data, and the `param` tag for URL parameters. When both a form value and a
 // URL parameter are present for the same field, the URL parameter wins.
 //
+// When the target implements FormDecoder its DecodeForm handles the form
+// portion and `form` tag filling is skipped; likewise ParamDecoder's
+// DecodeParam handles the param portion and `param` tag filling is skipped.
+//
 // fillFromValuesAndParams 在一次结构体遍历中同时从解析后的表单值和 URL 参数
-//（路径值和查询字符串）填充目标。结构体字段使用 `form` tag（缺省为字段名）
+// （路径值和查询字符串）填充目标。结构体字段使用 `form` tag（缺省为字段名）
 // 匹配表单数据，使用 `param` tag 匹配 URL 参数。当同一字段同时存在表单值和
-// URL 参数时，URL 参数优先。
+// URL 参数时，URL 参数优先。实现了 FormDecoder 时，表单部分由其 DecodeForm
+// 处理并跳过 `form` tag 填充；实现了 ParamDecoder 时，参数部分由其
+// DecodeParam 处理并跳过 `param` tag 填充。
 func fillFromValuesAndParams(r *http.Request, values url.Values, v any) error {
 	switch dst := v.(type) {
 	case *url.Values:
@@ -200,11 +242,29 @@ func fillFromValuesAndParams(r *http.Request, values url.Values, v any) error {
 		return fmt.Errorf("fill form+params: target must point to a struct")
 	}
 
+	skipForm, skipParam := false, false
+	if fd, ok := v.(FormDecoder); ok {
+		if err := fd.DecodeForm(r); err != nil {
+			return err
+		}
+		skipForm = true
+	}
+	if pd, ok := v.(ParamDecoder); ok {
+		if err := pd.DecodeParam(r); err != nil {
+			return err
+		}
+		skipParam = true
+	}
+	if skipForm && skipParam {
+		return nil
+	}
+
 	q := r.URL.Query()
-	return fillStructBoth(rv, values, r, q)
+	return fillStructBoth(rv, values, r, q, skipForm, skipParam)
 }
 
 // fillFromValues fills the target from the parsed form values.
+//
 // fillFromValues 将解析后的表单值填充到目标中。
 func fillFromValues(values url.Values, v any) error {
 	switch dst := v.(type) {
@@ -230,10 +290,14 @@ func fillFromValues(values url.Values, v any) error {
 // fillStructBoth traverses the struct once and fills fields from both form
 // values (via `form` tag) and URL parameters (via `param` tag). URL parameters
 // take precedence when both sources provide a value for the same field.
+// skipForm and skipParam disable the respective tag filling, which is how
+// FormDecoder / ParamDecoder take over their portion.
 //
 // fillStructBoth 一次遍历结构体，同时从表单值（`form` tag）和 URL 参数
-//（`param` tag）填充字段。当同一字段两者都提供值时，URL 参数优先。
-func fillStructBoth(rv reflect.Value, values url.Values, r *http.Request, q url.Values) error {
+// （`param` tag）填充字段。当同一字段两者都提供值时，URL 参数优先。
+// skipForm 与 skipParam 用于关闭对应的 tag 填充，即 FormDecoder /
+// ParamDecoder 接管其范畴的方式。
+func fillStructBoth(rv reflect.Value, values url.Values, r *http.Request, q url.Values, skipForm, skipParam bool) error {
 	rt := rv.Type()
 	for i := 0; i < rv.NumField(); i++ {
 		field := rv.Field(i)
@@ -242,15 +306,16 @@ func fillStructBoth(rv reflect.Value, values url.Values, r *http.Request, q url.
 		}
 		ft := rt.Field(i)
 		if ft.Anonymous {
-			if err := fillStructBoth(field, values, r, q); err != nil {
+			if err := fillStructBoth(field, values, r, q, skipForm, skipParam); err != nil {
 				return err
 			}
 			continue
 		}
 
 		// Form tag — field name is used as fallback.
+		//
 		// Form tag — 字段名作为缺省值。
-		{
+		if !skipForm {
 			name := ft.Tag.Get("form")
 			if name == "" {
 				name = ft.Name
@@ -264,17 +329,20 @@ func fillStructBoth(rv reflect.Value, values url.Values, r *http.Request, q url.
 		}
 
 		// Param tag — path value takes precedence over query string.
+		//
 		// Param tag — 路径参数优先于查询字符串。
-		if name := ft.Tag.Get("param"); name != "" {
-			val := r.PathValue(name)
-			if val == "" {
-				val = q.Get(name)
-			}
-			if val == "" {
-				continue
-			}
-			if err := setField(field, []string{val}); err != nil {
-				return fmt.Errorf("fill param field %q: %w", name, err)
+		if !skipParam {
+			if name := ft.Tag.Get("param"); name != "" {
+				val := r.PathValue(name)
+				if val == "" {
+					val = q.Get(name)
+				}
+				if val == "" {
+					continue
+				}
+				if err := setField(field, []string{val}); err != nil {
+					return fmt.Errorf("fill param field %q: %w", name, err)
+				}
 			}
 		}
 	}
@@ -313,6 +381,7 @@ func fillStruct(rv reflect.Value, values url.Values) error {
 }
 
 // setField sets the struct field from the form values.
+//
 // setField 用表单值设置结构体字段。
 func setField(field reflect.Value, vals []string) error {
 	if field.Kind() == reflect.Slice && field.Type().Elem().Kind() != reflect.Slice {
@@ -329,6 +398,7 @@ func setField(field reflect.Value, vals []string) error {
 }
 
 // setScalar parses a single form value into a scalar field.
+//
 // setScalar 将单个表单值解析为标量字段。
 func setScalar(field reflect.Value, s string) error {
 	switch field.Kind() {
@@ -365,14 +435,17 @@ func setScalar(field reflect.Value, s string) error {
 }
 
 // fillFromParams fills struct fields tagged with `param` from URL path values
-// and query parameters. For each field tagged with `param:"<name>"`, it first
-// tries r.PathValue(name); if empty, it falls back to r.URL.Query().Get(name).
-// If neither source provides a non-empty value, the field is skipped.
+// and query parameters. When the target implements ParamDecoder the work is
+// delegated to DecodeParam and `param` tag filling is skipped entirely.
 //
 // fillFromParams 从 URL 路径值和查询参数中填充带 `param` tag 的结构体字段。
-// 对于每个带有 `param:"<名称>"` tag 的字段，优先从 r.PathValue 获取；
-// 若为空则回退到 r.URL.Query().Get。若两者均无值则跳过该字段。
+// 当目标实现了 ParamDecoder 时，工作委托给 DecodeParam，并完全跳过 `param`
+// tag 填充。
 func fillFromParams(r *http.Request, v any) error {
+	if pd, ok := v.(ParamDecoder); ok {
+		return pd.DecodeParam(r)
+	}
+
 	rv := reflect.ValueOf(v)
 	if rv.Kind() != reflect.Pointer || rv.IsNil() {
 		return fmt.Errorf("fill params: target must be a non-nil pointer")
@@ -410,6 +483,7 @@ func fillStructFromParams(rv reflect.Value, r *http.Request) error {
 		}
 
 		// Path value takes precedence; fall back to query string.
+		//
 		// 路径参数优先，查询参数作为回退。
 		val := r.PathValue(name)
 		if val == "" {

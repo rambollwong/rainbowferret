@@ -27,20 +27,24 @@ func Timeout(d time.Duration) func(next http.Handler) http.Handler {
 }
 
 // TimeoutConfig holds the configuration for the Timeout middleware.
+//
 // TimeoutConfig 存储 Timeout 中间件的配置。
 type TimeoutConfig struct {
 	// Timeout is the maximum duration the handler is allowed to run.
 	// Defaults to 30 seconds when <= 0.
+	//
 	// Timeout 是 handler 允许运行的最大时长，<= 0 时默认为 30 秒。
 	Timeout time.Duration
 
 	// OnTimeout is called when the timeout fires. When nil a default 504
 	// JSON response is written.
+	//
 	// OnTimeout 在超时触发时调用。为 nil 时写入默认的 504 JSON 响应。
 	OnTimeout http.HandlerFunc
 }
 
 // TimeoutWithConfig returns a Timeout middleware configured with cfg.
+//
 // TimeoutWithConfig 返回使用 cfg 配置的 Timeout 中间件。
 func TimeoutWithConfig(cfg TimeoutConfig) func(next http.Handler) http.Handler {
 	d := cfg.Timeout
@@ -62,6 +66,7 @@ func TimeoutWithConfig(cfg TimeoutConfig) func(next http.Handler) http.Handler {
 
 			// If the context expired and the handler hasn't started
 			// a response yet, send the timeout response.
+			//
 			// 若 context 到期且 handler 尚未开始写入响应，
 			// 则发送超时响应。
 			if ctx.Err() != nil && !rw.wrote {
@@ -72,6 +77,7 @@ func TimeoutWithConfig(cfg TimeoutConfig) func(next http.Handler) http.Handler {
 }
 
 // headerWriter records whether WriteHeader has been called.
+//
 // headerWriter 记录 WriteHeader 是否已被调用。
 type headerWriter struct {
 	http.ResponseWriter
@@ -92,6 +98,7 @@ func (hw *headerWriter) Write(b []byte) (int, error) {
 }
 
 // Unwrap returns the underlying ResponseWriter.
+//
 // Unwrap 返回底层 ResponseWriter。
 func (hw *headerWriter) Unwrap() http.ResponseWriter {
 	return hw.ResponseWriter

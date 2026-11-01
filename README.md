@@ -209,6 +209,24 @@ and can be combined freely with `ferret.Chain`.
 | `WriteStream(w, code, contentType, reader)`         | Stream arbitrary data to the response (useful for file downloads or SSE).                       |
 | `PathParam(r, name)` / `QueryParam(r, name)`        | Read path wildcards and query parameters with typed variants (`Int`, `Float`, `Bool`, `Int64`). |
 | `Validator` interface                               | If the bound struct implements `Validate() error`, it is called automatically after binding.    |
+| `FormDecoder` interface                             | Delegates the form portion to `DecodeForm` and skips `form` tag filling.                        |
+| `ParamDecoder` interface                            | Delegates the URL-param portion to `DecodeParam` and skips `param` tag filling.                 |
+
+`FormDecoder` / `ParamDecoder` let generated types (e.g. protobuf's `.pb.go`) take part in binding without struct tags:
+
+```go
+func (u *User) DecodeForm(r *http.Request) error {
+    u.Name = r.FormValue("name")
+    return nil
+}
+
+func (u *User) DecodeParam(r *http.Request) error {
+    u.ID = r.PathValue("id")
+    return nil
+}
+```
+
+Detection is at the target-type level: implementing an interface fully takes over that portion (its tags are not filled). The other portion still uses tags unless its interface is implemented too.
 
 ### `types` — shared types
 

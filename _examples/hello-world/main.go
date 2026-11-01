@@ -1,4 +1,5 @@
 // Example: minimal Hello World server.
+//
 // 示例：最小化的 Hello World 服务。
 //
 //	go run _examples/hello-world/main.go

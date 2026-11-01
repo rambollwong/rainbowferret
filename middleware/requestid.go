@@ -8,14 +8,17 @@ import (
 )
 
 // requestIDKey is the context key under which the request ID is stored.
+//
 // requestIDKey 是存储请求 ID 的 context 键。
 const requestIDKey ctxKey = "RequestID"
 
 // RequestIDHeader is the default HTTP header name for the request ID.
+//
 // RequestIDHeader 是请求 ID 的默认 HTTP 头名。
 const RequestIDHeader = "X-Request-ID"
 
 // GetRequestID returns the request ID stored in ctx, or "" if none is found.
+//
 // GetRequestID 返回存储在 ctx 中的请求 ID，未找到则返回 ""。
 func GetRequestID(ctx context.Context) string {
 	id, _ := ctx.Value(requestIDKey).(string)
@@ -23,6 +26,7 @@ func GetRequestID(ctx context.Context) string {
 }
 
 // WithRequestID returns a child context with the given request ID attached.
+//
 // WithRequestID 返回一个附加了指定请求 ID 的子 context。
 func WithRequestID(ctx context.Context, id string) context.Context {
 	return context.WithValue(ctx, requestIDKey, id)
@@ -47,10 +51,12 @@ func RequestID() func(next http.Handler) http.Handler {
 }
 
 // RequestIDConfig holds the configuration for the RequestID middleware.
+//
 // RequestIDConfig 存储 RequestID 中间件的配置。
 type RequestIDConfig struct {
 	// HeaderName is the HTTP header used to read / write the request ID.
 	// Defaults to RequestIDHeader ("X-Request-ID").
+	//
 	// HeaderName 是用于读取/写入请求 ID 的 HTTP 头，默认为 "X-Request-ID"。
 	HeaderName string
 
@@ -66,11 +72,13 @@ type RequestIDConfig struct {
 
 	// Generator creates a new request ID. When nil, a crypto/rand-based
 	// hex generator (with prefix) is used.
+	//
 	// Generator 创建一个新的请求 ID。为 nil 时使用基于 crypto/rand 的 hex 生成器（带前缀）。
 	Generator func() string
 }
 
 // RequestIDWithConfig returns a RequestID middleware configured with cfg.
+//
 // RequestIDWithConfig 返回使用 cfg 配置的 RequestID 中间件。
 func RequestIDWithConfig(cfg RequestIDConfig) func(next http.Handler) http.Handler {
 	headerName := cfg.HeaderName

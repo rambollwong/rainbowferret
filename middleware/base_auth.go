@@ -9,6 +9,7 @@ import (
 )
 
 // BaseAuthConfig holds the configuration for the BaseAuth middleware.
+//
 // BaseAuthConfig 存储 BaseAuth 中间件的配置。
 type BaseAuthConfig struct {
 	// AuthFunc decides whether a credential is valid. The scheme argument

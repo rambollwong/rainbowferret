@@ -9,6 +9,7 @@ import (
 )
 
 // WriteJSON writes a JSON-encoded response with the given status code.
+//
 // WriteJSON 以给定的状态码写入 JSON 编码的响应。
 func WriteJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -19,12 +20,14 @@ func WriteJSON(w http.ResponseWriter, code int, v any) {
 }
 
 // WriteNoContent writes a 204 No Content response with an empty body.
+//
 // WriteNoContent 写入一个无内容的 204 响应。
 func WriteNoContent(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // WriteText writes a plain text response with the given status code.
+//
 // WriteText 以给定的状态码写入纯文本响应。
 func WriteText(w http.ResponseWriter, code int, text string) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")

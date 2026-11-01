@@ -17,6 +17,7 @@ import (
 )
 
 // GetUserHandler handles GET /users/{id}.
+//
 // GetUserHandler 处理 GET /users/{id}。
 type GetUserHandler struct{}
 
@@ -25,6 +26,7 @@ func (GetUserHandler) Handle(ctx context.Context, _ struct{}) (UserResp, error) 
 }
 
 // CreateUserHandler handles POST /users.
+//
 // CreateUserHandler 处理 POST /users。
 type CreateUserHandler struct{}
 
@@ -33,16 +35,19 @@ func (CreateUserHandler) Handle(ctx context.Context, req CreateUserReq) (UserRes
 }
 
 // DeleteUserHandler handles DELETE /users/{id}.
+//
 // DeleteUserHandler 处理 DELETE /users/{id}。
 type DeleteUserHandler struct{}
 
 func (DeleteUserHandler) Handle(ctx context.Context, _ struct{}) (*UserResp, error) {
 	// Returning a nil response produces 204 No Content.
+	//
 	// 返回 nil 响应产生 204 No Content。
 	return nil, nil
 }
 
 // registerRoutes wires the handlers onto the group using method-style calls.
+//
 // registerRoutes 通过方法式调用将处理器注册到分组上。
 func registerRoutes(api *ferret.Group) {
 	api.GetHandler("/users/{id}", GetUserHandler{})

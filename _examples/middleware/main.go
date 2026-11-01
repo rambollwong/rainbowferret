@@ -1,4 +1,5 @@
 // Example: combining multiple middleware for a production-ready service.
+//
 // 示例：组合多个中间件构建生产级服务。
 //
 //	go run _examples/middleware/main.go
@@ -27,6 +28,7 @@ func main() {
 	)
 
 	// User endpoints — apply content-type check only to this group.
+	//
 	// 用户端点 — 仅对该分组应用 Content-Type 检查。
 	users := root.Group("/users", middleware.ContentType("application/json"))
 	users.Get("/{id}", func(w http.ResponseWriter, r *http.Request) {
@@ -39,6 +41,7 @@ func main() {
 	})
 
 	// Slow endpoint to demonstrate timeout.
+	//
 	// 慢端点用于演示超时。
 	root.Get("/slow", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -51,6 +54,7 @@ func main() {
 	})
 
 	// Panic endpoint to demonstrate recovery.
+	//
 	// 崩溃端点用于演示恢复。
 	root.Get("/panic", func(w http.ResponseWriter, r *http.Request) {
 		panic("something went wrong")

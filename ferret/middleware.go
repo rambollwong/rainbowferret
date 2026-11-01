@@ -3,10 +3,12 @@ package ferret
 import "net/http"
 
 // Middleware is the middleware type for http.Handler.
+//
 // Middleware 是用于 http.Handler 的中间件类型。
 type Middleware func(next http.Handler) http.Handler
 
 // MiddlewareFunc is the middleware type for http.HandlerFunc.
+//
 // MiddlewareFunc 是用于 http.HandlerFunc 的中间件类型。
 type MiddlewareFunc func(next http.HandlerFunc) http.HandlerFunc
 

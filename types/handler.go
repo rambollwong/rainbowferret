@@ -13,10 +13,12 @@ type Handler[T, R any] interface {
 }
 
 // HandlerFunc is the function variant of Handler.
+//
 // HandlerFunc 是 Handler 的函数变体。
 type HandlerFunc[T, R any] func(ctx context.Context, req T) (res R, err error)
 
 // Handle implements the Handler interface by calling the underlying function.
+//
 // Handle 通过调用底层函数实现 Handler 接口。
 func (f HandlerFunc[T, R]) Handle(ctx context.Context, req T) (res R, err error) {
 	return f(ctx, req)

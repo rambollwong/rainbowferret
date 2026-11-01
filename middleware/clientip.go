@@ -15,6 +15,7 @@ import (
 const clientIPKey ctxKey = "ClientIP"
 
 // GetClientIP returns the client IP stored in ctx, or "" if none is found.
+//
 // GetClientIP 返回存储在 ctx 中的客户端 IP，未找到则返回 ""。
 func GetClientIP(ctx context.Context) string {
 	ip, _ := ctx.Value(clientIPKey).(string)
@@ -22,6 +23,7 @@ func GetClientIP(ctx context.Context) string {
 }
 
 // WithClientIP returns a child context with the given client IP attached.
+//
 // WithClientIP 返回一个附加了指定客户端 IP 的子 context。
 func WithClientIP(ctx context.Context, ip string) context.Context {
 	return context.WithValue(ctx, clientIPKey, ip)
@@ -39,6 +41,7 @@ func ClientIP() func(next http.Handler) http.Handler {
 }
 
 // ClientIPConfig holds the configuration for the ClientIP middleware.
+//
 // ClientIPConfig 存储 ClientIP 中间件的配置。
 type ClientIPConfig struct {
 	// TrustProxy enables parsing of proxy headers (X-Forwarded-For and
@@ -52,12 +55,14 @@ type ClientIPConfig struct {
 
 	// RealIPHeader overrides the header name used when TrustProxy is
 	// enabled. Defaults to "X-Real-IP".
+	//
 	// RealIPHeader 覆盖 TrustProxy 启用时使用的真实 IP 头名，
 	// 默认为 "X-Real-IP"。
 	RealIPHeader string
 }
 
 // ClientIPWithConfig returns a ClientIP middleware configured with cfg.
+//
 // ClientIPWithConfig 返回使用 cfg 配置的 ClientIP 中间件。
 func ClientIPWithConfig(cfg ClientIPConfig) func(next http.Handler) http.Handler {
 	trustProxy := cfg.TrustProxy
@@ -79,17 +84,17 @@ func ClientIPWithConfig(cfg ClientIPConfig) func(next http.Handler) http.Handler
 //
 // Without TrustProxy the result is always derived from r.RemoteAddr.
 // With TrustProxy the precedence is:
-//   1. X-Forwarded-For (first entry)
-//   2. RealIPHeader (default X-Real-IP)
-//   3. r.RemoteAddr
+//  1. X-Forwarded-For (first entry)
+//  2. RealIPHeader (default X-Real-IP)
+//  3. r.RemoteAddr
 //
 // resolveIP 从请求中提取最佳猜测的客户端 IP。
 //
 // 未启用 TrustProxy 时始终从 r.RemoteAddr 获取。
 // 启用 TrustProxy 时优先级为：
-//   1. X-Forwarded-For（第一个条目）
-//   2. RealIPHeader（默认 X-Real-IP）
-//   3. r.RemoteAddr
+//  1. X-Forwarded-For（第一个条目）
+//  2. RealIPHeader（默认 X-Real-IP）
+//  3. r.RemoteAddr
 func resolveIP(r *http.Request, trustProxy bool, realIPHeader string) string {
 	if trustProxy {
 		if ip := firstForwardedFor(r); ip != "" {

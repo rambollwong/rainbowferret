@@ -6,6 +6,7 @@ import (
 )
 
 // Router is the interface that HTTP routing groups must implement.
+//
 // Router 是 HTTP 路由分组必须实现的接口。
 type Router interface {
 	Handler() http.Handler
@@ -40,6 +41,7 @@ type Router interface {
 	Static(pattern, dir string)
 
 	// StaticFS serves static files from an fs.FS (e.g. embed.FS, os.DirFS).
+	//
 	// StaticFS 从 fs.FS（如 embed.FS、os.DirFS）提供静态文件服务。
 	StaticFS(pattern string, fsys fs.FS)
 }

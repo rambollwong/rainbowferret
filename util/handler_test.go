@@ -65,6 +65,7 @@ func TestHandleTValueRequest(t *testing.T) {
 }
 
 // createdResp implements types.SuccessStatuser, returning 201 Created.
+//
 // createdResp 实现 types.SuccessStatuser，返回 201 Created。
 type createdResp struct {
 	ID string `json:"id"`

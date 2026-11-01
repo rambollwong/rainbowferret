@@ -196,6 +196,24 @@ api.PostHandler("/users", CreateUserHandler{})
 | `WriteStream(w, code, contentType, reader)`         | 流式输出响应（适用于文件下载或 SSE）。                                           |
 | `PathParam(r, name)` / `QueryParam(r, name)`        | 读取路径通配符和查询参数，提供 `Int`、`Float`、`Bool`、`Int64` 等类型变体。      |
 | `Validator` 接口                                    | 若绑定的结构体实现了 `Validate() error`，绑定后自动调用校验。                    |
+| `FormDecoder` 接口                                  | 表单部分委托给 `DecodeForm`，跳过 `form` tag 填充。                              |
+| `ParamDecoder` 接口                                 | URL 参数部分委托给 `DecodeParam`，跳过 `param` tag 填充。                        |
+
+`FormDecoder` / `ParamDecoder` 让无法携带结构体 tag 的生成代码（如 protobuf 的 `.pb.go`）也能参与绑定：
+
+```go
+func (u *User) DecodeForm(r *http.Request) error {
+    u.Name = r.FormValue("name")
+    return nil
+}
+
+func (u *User) DecodeParam(r *http.Request) error {
+    u.ID = r.PathValue("id")
+    return nil
+}
+```
+
+检测发生在目标类型层面：实现某接口即完全接管该部分绑定（对应 tag 不再填充）。未实现接口的另一部分仍走 tag 填充。
 
 ### `types` — 共享类型
 

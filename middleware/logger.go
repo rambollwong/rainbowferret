@@ -17,6 +17,7 @@ type responseWriter struct {
 }
 
 // WriteHeader captures the status code and delegates to the underlying writer.
+//
 // WriteHeader 捕获状态码并委托给底层 writer。
 func (rw *responseWriter) WriteHeader(code int) {
 	rw.status = code
@@ -51,14 +52,17 @@ func Logger() func(next http.Handler) http.Handler {
 }
 
 // LoggerConfig holds the configuration for the Logger middleware.
+//
 // LoggerConfig 存储 Logger 中间件的配置。
 type LoggerConfig struct {
 	// Logf is the function used to emit log lines. When nil, log.Printf is used.
+	//
 	// Logf 是用于输出日志行的函数。为 nil 时使用 log.Printf。
 	Logf func(format string, args ...any)
 }
 
 // LoggerWithConfig returns a Logger middleware configured with cfg.
+//
 // LoggerWithConfig 返回使用 cfg 配置的 Logger 中间件。
 func LoggerWithConfig(cfg LoggerConfig) func(next http.Handler) http.Handler {
 	logf := cfg.Logf
