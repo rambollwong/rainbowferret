@@ -45,7 +45,7 @@ func TestHandleTValueRequest(t *testing.T) {
 		Name string `json:"name"`
 	}
 
-	h := HandleT(
+	h := HandleT[userReq, map[string]string](
 		func(ctx context.Context, req userReq) (map[string]string, error) {
 			return map[string]string{"name": req.Name}, nil
 		},
@@ -77,7 +77,7 @@ func TestHandleTSuccessStatus(t *testing.T) {
 	type createReq struct {
 		Name string `json:"name"`
 	}
-	h := HandleT(
+	h := HandleT[createReq, createdResp](
 		func(ctx context.Context, req createReq) (createdResp, error) {
 			return createdResp{ID: "1"}, nil
 		},
